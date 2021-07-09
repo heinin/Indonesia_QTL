@@ -1,7 +1,7 @@
 # ==============================================================================
-# Author(s) : Heini M Natri, hnatri@asu.edu
-# Date : September 2019
-# Description: Colocalization analysis using the EBI eQTL catalog
+# Author(s) : Heini M Natri, heini.natri@gmail.com
+# Date : May 2020
+# Description: Colocalization analysis for eQTLs and GWAS
 # ==============================================================================
 
 # ======================================
@@ -38,7 +38,7 @@ setwd("/home/hnatri/Colocalization/")
 # ======================================
 
 # Significant eGenes
-indoeQTL <- read.table("/scratch/hnatri/Colocalization/Astle_et_al/Indonesian_eQTL_ALL_CHRS_perm10k_FDR010_significant.txt")
+indoeQTL <- read.table("/scratch/hnatri/Indonesian/eQTL_methylQTL_result/Indonesian_eQTL_lifted_ALL_CHRS_perm10k_FDR010_significant.txt")
 indoeQTL_sig_genes <- indoeQTL$V1
 colnames(indoeQTL) <- c("molecular_trait_id", "chromosome", "target_start",
                         "target_end", "strand", "nvars_tested", "var_distance",
@@ -47,13 +47,13 @@ colnames(indoeQTL) <- c("molecular_trait_id", "chromosome", "target_start",
                         "slope", "adjp", "adjp_beta", "fdrp", "dunno")
 
 # Nominal stats for all variants in the cis-region of each significant eGene
-indoeQTL_nominal <- read.table("/scratch/hnatri/Colocalization/Astle_et_al/Indonesian_eQTL_FDR020_nominal_stats_for_coloc.txt")
+indoeQTL_nominal <- read.table("/scratch/hnatri/Indonesian/eQTL_methylQTL_result/Indonesian_eQTL_lifted_ALL_CHRS_nominal1.txt")
 colnames(indoeQTL_nominal) <- c("target", "chr", "start", "end", "strand",
                                 "length", "var_distance", "rsid", "var_chr",
                                 "var_start", "var_end", "pval", "slope", "topsnp")
 
 # MAF info
-varInfo <- read.table("/scratch/hnatri/Colocalization/Astle_et_al/MAF_varID_removemissing.tsv", header=F)
+varInfo <- read.table("/home/hnatri/Indonesia/MAF_varID_removemissing.tsv", header=F)
 colnames(varInfo) <- c("chr", "pos", "maf", "variant_ID")
 
 
@@ -261,7 +261,6 @@ traits <- c("basophil_count_27863252-GCST004618-EFO_0005090",
             "basophil_percentage_of_leukocytes_27863252-GCST004631-EFO_0007992",
             "eosinophil_count_27863252-GCST004606-EFO_0004842",
             "eosinophil_percentage_of_granulocytes_27863252-GCST004617-EFO_0007996",
-            "eosinophil_percentage_of_leukocytes_27863252-GCST004600-EFO_0007991",
             "erythrocyte_count_27863252-GCST004601-EFO_0004305",
             "granulocyte_count_27863252-GCST004614-EFO_0007987",
             "granulocyte_percentage_of_myeloid_white_cells_27863252-GCST004608-EFO_0007997",
@@ -276,20 +275,21 @@ traits <- c("basophil_count_27863252-GCST004618-EFO_0005090",
             "mean_platelet_volume_27863252-GCST004599-EFO_0004584",
             "monocyte_count_27863252-GCST004625-EFO_0005091",
             "monocyte_percentage_of_leukocytes_27863252-GCST004609-EFO_0007989",
-            "myeloid_while_cell_count_27863252-GCST004626-EFO_0007988",
+            "myeloid_white_cell_count_27863252-GCST004626-EFO_0007988",
             "neutrophil_count_27863252-GCST004629-EFO_0004833",
             "neutrophil_percentage_of_granulocytes_27863252-GCST004623-EFO_0007994",
             "neutrophil_percentage_of_leukocytes_27863252-GCST004633-EFO_0007990",
+            "osinophil_percentage_of_leukocytes_27863252-GCST004600-EFO_0007991",
             "platelet_component_distribution_width_27863252-GCST004616-EFO_0007984",
             "platelet_count_27863252-GCST004603-EFO_0004309",
-            "plateletcrit_27863252-GCST004607-EFO_0007985",
+            "platelet_crit_27863252-GCST004607-EFO_0007985",
             "red_blood_cell_distribution_width_27863252-GCST004621-EFO_0005192",
             "reticulocyte_count_27863252-GCST004611-EFO_0007986",
             "reticulocyte_count_27863252-GCST004612-EFO_0007986",
             "reticulocyte_count_27863252-GCST004619-EFO_0007986",
             "reticulocyte_count_27863252-GCST004622-EFO_0007986",
             "reticulocyte_count_27863252-GCST004628-EFO_0007986",
-            "sum_of_basophil_neutrophil_counts_27863252-GCST004620-EFO_0004833",
+            "sum_of_basophil_and_neutrophil_counts_27863252-GCST004620-EFO_0004833",
             "sum_of_eosinophil_and_basophil_counts_27863252-GCST004624-EFO_0005090",
             "sum_of_neutrophil_and_eosinophil_counts_27863252-GCST004613-EFO_0004833")
 
@@ -297,8 +297,8 @@ for (trait in traits){
   # Astle et aL. 2016. The Allelic Landscape of Human Blood Cell Trait Variation 
   # and Links to Common Complex Disease.
   message(trait)
-  gwas_path <- paste("/scratch/hnatri/Colocalization/Astle_et_al/", trait, "-Build37.f.tsv", sep="")
-  GWAS_test <- read.table(gwas_path, header=TRUE)
+  gwas_path <- paste("/scratch/hnatri/Colocalization/Astle_et_al/", trait, "-Build37.f.tsv.gz", sep="")
+  GWAS_test <- read.table(gzfile(gwas_path), header=TRUE)
   head(GWAS_test)
   
   # An empty dataframe for results
@@ -345,12 +345,10 @@ for (trait in traits){
       next
     }
     
-    # TODO: GWAS N?
-  
     # Perform colocalisation analysis
     result <- coloc.abf(
       dataset2 = list(pvalues = as.numeric(input$pval_indo), type = "quant", N = 115, MAF = as.numeric(input$maf)),
-      dataset1 = list(pvalues = as.numeric(input$pval_gwas), type = "quant", N = 10000, MAF = as.numeric(input$ma_freq)))
+      dataset1 = list(pvalues = as.numeric(input$pval_gwas), type = "quant", N = 173480, MAF = as.numeric(input$ma_freq)))
     
     # Sensitivity analysis
     rule <- "H4 > 0.8 & H4/H3 >5"
@@ -420,3 +418,4 @@ for (trait in traits){
   
   ggsave(result_plot_path, p, width = 8, height = 8)
 }
+
