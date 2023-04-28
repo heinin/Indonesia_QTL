@@ -36,25 +36,9 @@ setwd("/home/hnatri/Colocalization/")
 # Read in data
 # ======================================
 
-#indo_perm <- read.table("/scratch/hnatri/Indonesian/eQTL_methylQTL_result/Indonesian_eQTL_lifted_ALL_CHRS_perm10k.txt")
 indo_perm_sig010 <- read.table("/scratch/hnatri/Indonesian/eQTL_methylQTL_result/Indonesian_eQTL_lifted_ALL_CHRS_perm10k_FDR010_significant.txt")
-#indo_nom <- read.table("/scratch/hnatri/Indonesian/eQTL_methylQTL_result/Indonesian_eQTL_lifted_ALL_CHRS_nominal1.txt")
-#colnames(indo_nom) <- c("target", "chr", "start", "end", "strand", "length", "var_distance", "rsid", "var_chr", "var_start", "var_end", "pval", "slope", "topsnp")
-
-#indo_perm$fdrp <- p.adjust(indo_perm$V18, method='fdr', n = length(indo_perm$V18))
-#indo_perm_sig <- indo_perm[indo_perm$fdrp<0.1,]
 indoeQTL_sig_genes <- indo_perm_sig010$V1
 
-# MAF info
-#varInfo <- read.table("/home/hnatri/Indonesia/MAF_varID_removemissing.tsv", header=F)
-#colnames(varInfo) <- c("chr", "pos", "maf", "variant_ID")
-
-#infoCols <- read.table("/home/hnatri/Indonesia/info_cols.tsv", header=T)
-#infoCols$variant_ID <- paste(infoCols$CHROM, infoCols$POS, sep="_")
-
-#varInfoCols <- merge(varInfo, infoCols, by="variant_ID")
-#head(varInfoCols)
-#dim(varInfoCols)
 
 # ======================================
 # Helper functions
@@ -257,11 +241,9 @@ run_gene_trait_coloc <- function(eQTL_nominal, eQTL_N, trait, trait_associations
   colnames(results) <- c("PP0", "PP1", "PP2", "PP3", "PP4", "NsnpsColoc", "sensitivityRule", "sensitivityp12lower", "sensitivityp12upper", "note")
   results$note <- "ok"
   
-  dim(trait_associations)
   colnames(trait_associations) <- gsub("variant_id", "rsid", colnames(trait_associations))
   colnames(trait_associations) <- gsub("p_value", "pval", colnames(trait_associations))
-  #trait_associations$rsid <- unlist(trait_associations$rsid)
-  #trait_associations <- data.frame(sapply(trait_associations, function(x) unlist(x) )  )
+  
   # Running the colocalization analysis for each gene
   # Counting how many genes have been processed:
   counter <- 0
@@ -276,17 +258,7 @@ run_gene_trait_coloc <- function(eQTL_nominal, eQTL_N, trait, trait_associations
       next
     }
     
-    # Adding MAF
-    #nominal_egene$variant_ID <- paste(nominal_egene$chromosome, nominal_egene$position, sep = "_")
-    #testVarInfo <- varInfo[varInfo$variant_ID %in% nominal_egene$variant_ID , ]
-    #nominal_egene <- nominal_egene[nominal_egene$variant_ID %in% testVarInfo$variant_ID , ]
-    #testVarInfo <- testVarInfo[match(nominal_egene$variant_ID, testVarInfo$variant_ID) , ]
-    
-    #nominal_egene$maf <- testVarInfo$maf
-    #nominal_egene$rsid <- as.character(nominal_egene$rsid)
-    
     trait_associations_sharedpos <- trait_associations[trait_associations$rsid %in% nominal_egene$rsid , ]
-    dim(trait_associations_sharedpos)
     
     # Merging input data for colocalization
     input <- merge(nominal_egene, trait_associations_sharedpos, by="rsid", all = F,
@@ -326,24 +298,15 @@ run_gene_trait_coloc <- function(eQTL_nominal, eQTL_N, trait, trait_associations
     }
   }
   
-  #results[complete.cases(results),]
-  #results["ENSG00000079335_cg07146231", ]
   
   # Calculating PP4/PP3
   results$PP4_PP3 <- results$PP4/results$PP3
   
-  # Selecting significant results based on PP4/PP3>5 and PP4>0.8
-  #all_resultssig <- all_results[all_results$PP4_PP3>5 , ]
-  #all_resultssig <- all_resultssig[all_resultssig$PP4>0.8 , ]
-  #dim(all_resultssig)
-  
   # Writing results to a file
-  #"sum_of_neutrophil_and_eosinophil_counts_27863252-GCST004613-EFO_0004833"
   message("Saving results")
   result_path <- paste0("/scratch/hnatri/Colocalization/Astle_et_al/eur_res/", eur, "_", trait, "_coloc_res_sensitivity.tsv")
   write.table(results, result_path, sep="\t")
-  #results <- read.table("/scratch/hnatri/Colocalization/Astle_et_al/sum_of_neutrophil_and_eosinophil_counts_27863252-GCST004613-EFO_0004833_coloc_res_sensitivity.tsv", sep="\t")
-  
+
   # Plotting min p12s
   #results_passthreshold <- results[results$sensitivityPassrule=="PASS" , ]
   #results_passthreshold$sensitivityp12lower <- as.numeric(results_passthreshold$sensitivityp12lower)
@@ -376,8 +339,6 @@ run_gene_trait_coloc <- function(eQTL_nominal, eQTL_N, trait, trait_associations
   #ggsave(result_plot_path, p, width = 8, height = 8)
   
 }
-
-# TODO: GWAS colocalization, loop through all genes and traits of interest
 
 # Running for all traits
 traits <- c("basophil_count_27863252-GCST004618-EFO_0005090",
@@ -416,8 +377,6 @@ traits <- c("basophil_count_27863252-GCST004618-EFO_0005090",
             "sum_of_basophil_and_neutrophil_counts_27863252-GCST004620-EFO_0004833",
             "sum_of_eosinophil_and_basophil_counts_27863252-GCST004624-EFO_0005090",
             "sum_of_neutrophil_and_eosinophil_counts_27863252-GCST004613-EFO_0004833")
-
-traits
 
 # From ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/csv
 eur_eqtls <- c("GTEx_ge_blood", "Lepik_2017_ge_blood", "TwinsUK_ge_blood")
