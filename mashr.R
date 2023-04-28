@@ -19,7 +19,6 @@ library(dplyr)
 library(plyr)
 library(dmetar)
 library(tidyverse)
-#library(readr)
 library(mashr)
 library(data.table)
 library(dotwhisker)
@@ -28,7 +27,6 @@ library(dotwhisker)
 # Importing eQTL summary statistics
 # ======================================
 
-#indo_perm <- "/scratch/hnatri/Indonesian/eQTL_methylQTL_result/Indonesian_eQTL_lifted_ALL_CHRS_perm10k.txt"
 indo_nom <- read.table("/scratch/hnatri/Indonesian/eQTL_methylQTL_result/Indonesian_eQTL_lifted_ALL_CHRS_nominal1.txt")
 colnames(indo_nom) <- c("gene", "chr", "start", "end", "strand", "length", "total_tested_vars", "var_id", "var_chr", "var_start", "var_end", "pval", "beta", "is_top_snp")
 indo_maf <- "/home/hnatri/Indonesia/MAF_varID_removemissing.tsv"
@@ -50,8 +48,6 @@ infoCols <- read.table(indo_varinfo, header=T)
 infoCols$variant_ID <- paste(infoCols$CHROM, infoCols$POS, sep="_")
 
 varInfoCols <- merge(varInfo, infoCols, by="variant_ID")
-head(varInfoCols)
-dim(varInfoCols)
 
 # From ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/csv
 #eur_eqtls <- c("GTEx_ge_blood", "Lepik_2017_ge_blood", "TwinsUK_ge_blood.all")
@@ -67,7 +63,6 @@ twinsuk_nom$gene_rsID <- paste0(twinsuk_nom$molecular_trait_id, "_", twinsuk_nom
 twinsuk_nom <- twinsuk_nom[!(is.na(twinsuk_nom$rsid) | twinsuk_nom$rsid=="."),]
 
 # Inputs for mashr
-
 beta_se_p_input_list <- list("indo"=indo_nom, "gtex"=gtex_nom, "lepik"=lepik_nom, "twinsuk"=twinsuk_nom)
 beta_input_list <- lapply(beta_se_p_input_list, function(x) x[,(names(x) %in% c("gene_rsID", "beta"))])
 beta_input_df <- purrr::reduce(beta_input_list, full_join, by = "gene_rsID")
@@ -75,8 +70,6 @@ beta_input_df <- purrr::reduce(beta_input_list, full_join, by = "gene_rsID")
 rownames(beta_input_df) <- beta_input_df$gene_rsID
 beta_input_df <- as.matrix(beta_input_df[,!colnames(beta_input_df) %in% c("gene_rsID")])
 colnames(beta_input_df) <- names(beta_se_p_input_list)
-
-head(beta_input_df)
 
 se_input_list <- lapply(beta_se_p_input_list, function(x) x[,(names(x) %in% c("gene_rsID", "se"))])
 sapply(se_input_list, head, n = 6)
@@ -86,40 +79,22 @@ rownames(se_input_df) <- se_input_df$gene_rsID
 se_input_df <- as.matrix(se_input_df[,!colnames(se_input_df) %in% c("gene_rsID")])
 colnames(se_input_df) <- names(beta_se_p_input_list)
 
-head(se_input_df)
-
 # Checking for NAs and NaNs
 #beta_input_df[rowSums(is.na(beta_input_df)) > 0, ]
 #se_input_df[rowSums(is.na(se_input_df)) > 0, ]
 #beta_input_df[rowSums(is.nan(beta_input_df)) > 0, ]
 #se_input_df[rowSums(is.nan(se_input_df)) > 0, ]
 
-dim(beta_input_df)
-
 # Removing rows with NAs
 beta_matrix <- na.omit(beta_input_df)
 dim(beta_matrix)
 se_matrix <- na.omit(se_input_df)
 se_matrix <- abs(se_matrix)
-# beta_matrix <- read.table("/scratch/hnatri/Indonesian/mashr/beta_matrix.tsv")
-#p_matrix <- na.omit(matrix_list[["p"]])
-#topsnps <- matrix_list[["topsnps"]]
-#topsnps
 
 # Writing to files
 write.table(beta_matrix, "/scratch/hnatri/Indonesian/mashr/beta_matrix.tsv", sep="\t", quote=F)
 write.table(se_matrix, "/scratch/hnatri/Indonesian/mashr/se_matrix.tsv", sep="\t", quote=F)
-#write.table(p_matrix, "/scratch/hnatri/ILD/Data/p_matrix.tsv", sep="\t", quote=F)
-#write.table(topsnps, "/scratch/hnatri/ILD/Data/topsnps.tsv", sep="\t", quote=F)
-
-
-#topsnps2 <- topsnps[topsnps$gene_var_id %in% rownames(beta_matrix),]
-
-dim(beta_matrix)
-dim(se_matrix)
-#dim(p_matrix)
-#dim(topsnps)
-
+                        
 # Removing rows with 0 values (zero in both beta and SE for the same individials causes problems)
 beta_matrix_filter_rows <- as.data.frame(beta_matrix) %>% filter_all(any_vars(. %in% c(0)))
 beta_matrix_filter <- beta_matrix[!(rownames(beta_matrix) %in% c(rownames(beta_matrix_filter_rows))),]
@@ -129,11 +104,9 @@ beta_matrix_filter <- beta_matrix_filter[sample(nrow(beta_matrix_filter), 116661
 se_matrix_filter <- se_matrix[rownames(beta_matrix_filter),]
 # Sanity check
 identical(rownames(beta_matrix_filter), rownames(se_matrix_filter))
-dim(beta_matrix_filter)
 
 # Genes shared between all cell populations (included in testing)
 genes_included <- unique(sapply(strsplit(rownames(beta_matrix_filter),"_"), `[`, 1))
-length(genes_included)
 
 # ======================================
 # Coordinate liftover
@@ -181,7 +154,6 @@ print(names(U.c))
 # The Crucial Rule: fitting the mash model must be performed with either all the
 # tests you performed, or – if that causes computational challenges – a large 
 # random subset of tests.
-# TODO: test without algorithm = "R"
 # Start the clock!
 ptm <- proc.time()
 m = mash(mashr_data, U.c, algorithm = "R")
@@ -191,6 +163,7 @@ print(get_loglik(m), digits = 10)
 
 # Save an object to a file
 saveRDS(m, file = "/scratch/hnatri/Indonesian/mashr/mashr_canoncovs.rds")
+                        
 # Restore the object
 m <- readRDS(file = "/scratch/hnatri/Indonesian/mashr/mashr_canoncovs.rds")
 
@@ -296,14 +269,3 @@ pdf(sprintf("/scratch/hnatri/Indonesian/mashr/mashr_metaplot_canoncov_datacov.pd
 mash_plot_meta(m, get_significant_results(m)[1])
 dev.off()
 
-# ======================================
-# Plotting
-# ======================================
-
-# Plotting some of the most significant Indonesia-specific hits
-indo_sig <- names(head(get_significant_results(m, conditions=1)))
-
-beta_df <- as.data.frame(beta_matrix_filter)
-plot_beta <- beta_matrix_filter[indo_sig,]
-
-setdiff(indo_sig, rownames(beta_matrix_filter))
