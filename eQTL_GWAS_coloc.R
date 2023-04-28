@@ -10,10 +10,6 @@
 
 library(dplyr)
 library(ggplot2)
-#library(readr)
-#library(stringr)
-#library(httr)
-#library(jsonlite)
 library(tidyverse)
 library(coloc)
 library(biomaRt)
@@ -21,7 +17,6 @@ library(wiggleplotr)
 library(GenomicRanges)
 library(biomaRt)
 library(rtracklayer)
-#library(locuscomparer)
 library(data.table)
 library(viridis)
 
@@ -253,8 +248,6 @@ sensitivity <- function(obj, rule="", gene, npoints=100, doplot=TRUE,
 # traits
 # ======================================
 
-# TODO: GWAS colocalization, loop through all genes and traits of interest
-
 # Running for all traits:
 traits <- c("basophil_count_27863252-GCST004618-EFO_0005090",
             "basophil_percentage_of_granulocytes_27863252-GCST004634-EFO_0007995",
@@ -312,8 +305,6 @@ for (trait in traits){
   dim(trait_associations)
   colnames(trait_associations) <- gsub("variant_id", "rsid", colnames(trait_associations))
   colnames(trait_associations) <- gsub("p_value", "pval", colnames(trait_associations))
-  #trait_associations$rsid <- unlist(trait_associations$rsid)
-  #trait_associations <- data.frame(sapply(trait_associations, function(x) unlist(x) )  )
   # Running the colocalization analysis for each gene
   # Counting how many genes have been processed:
   counter <- 0
@@ -370,19 +361,10 @@ for (trait in traits){
     
   }
   
-  #results[complete.cases(results),]
-  #results["ENSG00000079335_cg07146231", ]
-  
   # Calculating PP4/PP3
   results$PP4_PP3 <- results$PP4/results$PP3
   
-  # Selecting significant results based on PP4/PP3>5 and PP4>0.8
-  #all_resultssig <- all_results[all_results$PP4_PP3>5 , ]
-  #all_resultssig <- all_resultssig[all_resultssig$PP4>0.8 , ]
-  #dim(all_resultssig)
-  
   # Writing results to a file
-  #"sum_of_neutrophil_and_eosinophil_counts_27863252-GCST004613-EFO_0004833"
   result_path <- paste("/scratch/hnatri/Colocalization/Astle_et_al/", trait, "_coloc_res_sensitivity.tsv", sep="")
   write.table(results, result_path, sep="\t")
   #results <- read.table("/scratch/hnatri/Colocalization/Astle_et_al/sum_of_neutrophil_and_eosinophil_counts_27863252-GCST004613-EFO_0004833_coloc_res_sensitivity.tsv", sep="\t")
@@ -396,9 +378,6 @@ for (trait in traits){
   
   # Proportion with p12 lower bound below 1e−07
   dim(results_passthreshold[results_passthreshold$sensitivityp12lower < 0.0000010 ,])
-  
-  #all_results_passthreshold["ENSG00000130592_cg19280572",]
-  #summary(log10(all_results_passthreshold$sensitivityp12lower))
   
   p <- ggplot(results_passthreshold, aes(x=log(sensitivityp12lower))) +
     geom_histogram(fill="black", bins = 20) +
