@@ -10,10 +10,6 @@
 
 library(dplyr)
 library(ggplot2)
-#library(readr)
-#library(stringr)
-#library(httr)
-#library(jsonlite)
 library(tidyverse)
 library(coloc)
 library(biomaRt)
@@ -21,7 +17,6 @@ library(wiggleplotr)
 library(GenomicRanges)
 library(biomaRt)
 library(rtracklayer)
-#library(locuscomparer)
 library(data.table)
 library(viridis)
 
